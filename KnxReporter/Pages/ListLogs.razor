@@ -1,0 +1,81 @@
+﻿@page "/fetchLogs"
+@using System.Net.Http
+@using System.Net.Http.Headers;
+@inject HttpClient Http
+
+    <h3>ListLogs</h3>
+
+    @if (logItems == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Timestamp</th>
+                        <th>Service</th>
+                        <th>FrameFormat</th>
+                        <th>RawData</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in logItems)
+                    {
+                        <tr>
+                            <td>@log.LogId</td>
+                            <td>@log.LogTimestamp</td>
+                            <td>@log.Service</td>
+                            <td>@log.FrameFormat</td>
+                            <td>@log.RawData</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+    }
+
+    @code {
+        private RawLog[] logItems;
+        private string exMsg = "";
+
+        private const string URL = "https://localhost:10000/api/RawLogs";
+        private string urlParameters = "";
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+
+                var temp = await Http.GetFromJsonAsync<IEnumerable<RawLog>>(URL);
+                logItems = temp.ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+        }
+
+
+        public class RawLog
+        {
+            public int LogId { get; set; }
+            public DateTime? LogTimestamp { get; set; }
+            public string Service { get; set; }
+            public string FrameFormat { get; set; }
+            public string RawData { get; set; }
+        }
+
+        public class WeatherForecast
+        {
+            public DateTime Date { get; set; }
+
+            public int TemperatureC { get; set; }
+
+            public string Summary { get; set; }
+
+            public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        }
+    }

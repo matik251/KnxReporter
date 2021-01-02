@@ -1,0 +1,73 @@
+﻿@page "/counter"
+@using Tewr.Blazor.FileReader
+@using System.IO;
+@using System.Xml;
+@inject IFileReaderService fileReaderService;
+
+
+<h1>Add .xml file with KNX Telegrams</h1>
+
+@*<p>Current count: @currentCount</p>*@
+
+@*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
+
+<input type="file" @ref=inputTypeFileElement />
+<a></a>
+<button @onclick=ReadFile>Read file</button>
+
+<h3>@doc</h3>
+
+@code {
+    private int currentCount = 0;
+    private ElementReference inputTypeFileElement;
+    private string doc = "";
+    public List<KnxTelegram> xmlTelegrams;
+
+    public async Task ReadFile()
+    {
+        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
+        {
+            XmlDocument xmlDoc = new XmlDocument();
+            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
+            {
+                xmlDoc = XmlDocument.Load(memStream);
+            }
+            //var list = xmlDoc.Elements("Telegram").ToList();
+
+            //foreach (var s in list)
+            //{
+            //    doc = doc + "\n" + s.ToString();
+
+            //};
+
+            var list = xmlDoc.GetElementsByTagName("");
+
+            var 
+
+            //XmlNodeList elemList = xmlDoc.Nodes();
+
+            //for (int i = 0; i < elemList.Count; i++)
+            //{
+            //    string attrVal = elemList[i].Attributes["SuperString"].Value;
+            //}
+
+            doc = xmlDoc.ToString();
+        }
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    public class KnxTelegram
+    {
+        public DateTime Date { get; set; }
+
+        public string Service { get; set; }
+
+        public string FrameFormat { get; set; }
+
+        public string RawData { get; set; }
+    }
+}
