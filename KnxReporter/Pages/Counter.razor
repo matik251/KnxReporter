@@ -3,6 +3,7 @@
 @using System.IO;
 @using System.Xml;
 @using Models;
+@using System.Collections.Concurrent;
 
 @inject IFileReaderService fileReaderService;
 
@@ -19,7 +20,7 @@
 
 <h3>@currentCount</h3>
 
-<Grid Items="DgTelegramsList" class="table table-bordered" RowClass='(row, index) => row.TID > 0 ? "table-success" : ""'>
+<Grid Items="DgTelegramsList" class="table table-bordered" RowClass='(row, index) => row.RawDataLength > 24 ? "table-success" : ""'>
     <GridColumn TRowData="Telegram" Expression="c => c.TID" />
     <GridColumn TRowData="Telegram" Expression="c => c.Timestamp" Format="d" />
     <GridColumn TRowData="Telegram" Expression="c => c.Service" />
@@ -28,16 +29,20 @@
 </Grid>
 
 <h3>@doc</h3>
+<button disabled=@ShowButton @onclick="SendXml">Send to server</button>
+
 
 @code {
-    private int currentCount = 0;
+
+    bool ShowButton = true;
+    private long currentCount = 0;
     private ElementReference inputTypeFileElement;
     private string doc = "";
 
-    public List<Telegram> TelegramsList = new List<Telegram>();
+    public ConcurrentBag<Telegram> TelegramsList = new ConcurrentBag<Telegram>();
     public List<Telegram> DgTelegramsList = new List<Telegram>();
 
-    public async Task ReadFile()
+    public async Task ReadFileTelegrams()
     {
         currentCount = 0;
         TelegramsList.Clear();
@@ -49,11 +54,12 @@
             {
                 xmlDoc.Load(memStream);
             }
-            XmlNodeList elem = xmlDoc.GetElementsByTagName("Telegram");
-            foreach (var e in elem)
+            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+            var tListGenercic = tList.Cast<XmlElement>();
+            Parallel.ForEach(tListGenercic, (t) =>
             {
                 var telegram = new Telegram();
-                XmlElement temp = (XmlElement)e;
+                XmlElement temp = (XmlElement)t;
 
                 telegram.TimestampS = temp.GetAttributeNode("Timestamp").Value;
                 var tempDate = DateTime.Parse(telegram.TimestampS);
@@ -62,21 +68,78 @@
                 telegram.Service = temp.GetAttributeNode("Service").Value;
                 telegram.FrameFormat = temp.GetAttributeNode("FrameFormat").Value;
                 telegram.RawData = temp.GetAttributeNode("RawData").Value;
+                telegram.RawDataLength = temp.GetAttributeNode("RawData").Value.Length;
 
                 telegram.TID = TelegramsList.Count;
-                currentCount = telegram.TID
+                currentCount = telegram.TID;
+                TelegramsList.Add(telegram);
+            });
+
+            doc = "File loaded succesfully!";
+        }
+        DgTelegramsList = new List<Telegram>((from t in TelegramsList
+                                              orderby t.TID ascending
+                                              select t).Take(10));
+    }
+
+    public async Task ReadFile()
+    {
+        currentCount = 0;
+        TelegramsList.Clear();
+        DgTelegramsList.Clear();
+
+        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
+        {
+            XmlDocument xmlDoc = new XmlDocument();
+            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
+            {
+                xmlDoc.Load(memStream);
+            }
+            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+            currentCount = tList.Count;
+            var tListGenercic = tList.Cast<XmlElement>();
+            var maxIterations = (tListGenercic.Count() > 10) ? 10 : tList.Count;
+
+            for (int i = 0; i < maxIterations; i++)
+            {
+                var t = tList[i];
+                var telegram = new Telegram();
+                XmlElement temp = (XmlElement)t;
+
+                telegram.TimestampS = temp.GetAttributeNode("Timestamp").Value;
+                var tempDate = DateTime.Parse(telegram.TimestampS);
+                telegram.Timestamp = tempDate.AddHours(2);
+
+                telegram.Service = temp.GetAttributeNode("Service").Value;
+                telegram.FrameFormat = temp.GetAttributeNode("FrameFormat").Value;
+                telegram.RawData = temp.GetAttributeNode("RawData").Value;
+                telegram.RawDataLength = temp.GetAttributeNode("RawData").Value.Length;
+
+                telegram.TID = TelegramsList.Count;
                 TelegramsList.Add(telegram);
             }
 
         }
         DgTelegramsList = new List<Telegram>((from t in TelegramsList
-                                              orderby t.TID descending
+                                              orderby t.TID ascending
                                               select t).Take(10));
+        doc = "File loaded succesfully!";
+        BlockButton(false);
     }
 
     private void IncrementCount()
     {
         currentCount++;
+    }
+    async void BlockButton(bool state)
+    {
+        ShowButton = state;
+        StateHasChanged();
+    }
+
+    async void SendXml()
+    {
+
     }
 
 }

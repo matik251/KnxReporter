@@ -13,6 +13,7 @@ namespace KnxReporter.Models
         public string FrameFormat { get; set; }
 
         public string RawData { get; set; }
+        public int RawDataLength { get; set; }
     }
 
     public enum KnxServices
