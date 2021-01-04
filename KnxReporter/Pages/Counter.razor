@@ -17,6 +17,7 @@
 <input type="file" @ref=inputTypeFileElement />
 <a></a>
 <button @onclick=ReadFile>Read file</button>
+<button @onclick=AnalyzeEmiLengths>Analyze Emi Structure</button>
 
 <h3>@currentCount</h3>
 
@@ -34,7 +35,7 @@
 
 @code {
 
-    bool ShowButton = true;
+    public bool ShowButton = true;
     private long currentCount = 0;
     private ElementReference inputTypeFileElement;
     private string doc = "";
@@ -125,6 +126,50 @@
                                               select t).Take(10));
         doc = "File loaded succesfully!";
         BlockButton(false);
+    }
+
+    public async Task AnalyzeEmiLengths()
+    {
+        var emiLengths = "";
+        var lenghtResultsTable = new ConcurrentDictionary<int, int>();
+        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
+        {
+            currentCount = 0;
+            XmlDocument xmlDoc = new XmlDocument();
+            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
+            {
+                xmlDoc.Load(memStream);
+            }
+            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+            currentCount = tList.Count;
+            var tListGenercic = tList.Cast<XmlElement>();
+            var maxIterations = (tListGenercic.Count() > 10) ? 10 : tList.Count;
+
+            var tempLength = 0;
+            Parallel.ForEach(tListGenercic, (t) =>
+            {
+                XmlElement temp = (XmlElement)t;
+
+                tempLength = temp.GetAttributeNode("RawData").Value.Length;
+                if (lenghtResultsTable.ContainsKey(tempLength))
+                {
+                    int tempValue = 0;
+                    lenghtResultsTable.TryGetValue(tempLength, out tempValue);
+                    lenghtResultsTable.TryUpdate(tempLength, tempValue + 1, tempValue);
+                }
+                else
+                {
+                    lenghtResultsTable.TryAdd(tempLength, 1);
+                }
+                currentCount = currentCount++;
+            });
+            foreach (var ent in lenghtResultsTable)
+            {
+                doc += "\n\r" + ent.Key.ToString() + " : " + ent.Value.ToString() + ",";
+            }
+        }
+
+        BlockButton(true);
     }
 
     private void IncrementCount()
