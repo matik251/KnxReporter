@@ -13,7 +13,7 @@ namespace KnxReporter.Pages
 
         private long currentCount = 0;
 
-        public async Task<string> AnalyzeEmiLengths(MemoryStream memStream)
+        public async Task<string> AnalyzeEmiLengths(XmlDocument xml )
         {
             var doc = "";
 
@@ -22,7 +22,7 @@ namespace KnxReporter.Pages
             {
                 currentCount = 0;
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(memStream);
+                xmlDoc= xml;
                 XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
                 currentCount = tList.Count;
                 var tListGenercic = tList.Cast<XmlElement>();

@@ -9,193 +9,122 @@
 @using Newtonsoft.Json;
 
 @inject IFileReaderService fileReaderService;
-@inject ApiService apiService
+@inject NavigationManager NavigationManager;
+@inject HttpClient http;
 
 
-<h1>Add .xml file with KNX Telegrams</h1>
-
-@*<p>Current count: @currentCount</p>*@
-
-@*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
-
-<input type="file" @ref=inputTypeFileElement />
-<a></a>
-<button @onclick=ReadFile>Read file</button>
-<button @onclick=AnalyzeEmiLengths>Analyze Emi Structure</button>
-
-<h3>@currentCount</h3>
-
-<Grid Items="DgTelegramsList" class="table table-bordered" RowClass='(row, index) => row.RawDataLength > 24 ? "table-success" : ""'>
-    <GridColumn TRowData="Telegram" Expression="c => c.TID" />
-    <GridColumn TRowData="Telegram" Expression="c => c.Timestamp" Format="d" />
-    <GridColumn TRowData="Telegram" Expression="c => c.Service" />
-    <GridColumn TRowData="Telegram" Expression="c => c.FrameFormat" />
-    <GridColumn TRowData="Telegram" Title="Raw Data">@context.RawData</GridColumn>
-</Grid>
-
-<h3>@doc</h3>
-<button disabled=@ShowButton @onclick="SendXml">Send to server</button>
+<pre><code>app.UseCors(policy => 
+    policy.AllowAnyOrigin()
+    .AllowAnyMethod()
+    .WithHeaders(HeaderNames.ContentType));</code></pre>
 
 
-@code {
+    <h1>Add .xml file with KNX Telegrams</h1>
 
-    public bool ShowButton = true;
-    private long currentCount = 0;
-    private ElementReference inputTypeFileElement;
-    private string doc = "";
+    <p>Current count: @currentCount</p>
 
-    public ConcurrentBag<Telegram> TelegramsList = new ConcurrentBag<Telegram>();
-    public List<Telegram> DgTelegramsList = new List<Telegram>();
+    @*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
 
-    public async Task ReadFileTelegrams()
-    {
-        currentCount = 0;
-        TelegramsList.Clear();
-        DgTelegramsList.Clear();
-        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
-        {
-            XmlDocument xmlDoc = new XmlDocument();
-            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
-            {
-                xmlDoc.Load(memStream);
-            }
-            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
-            var tListGenercic = tList.Cast<XmlElement>();
-            Parallel.ForEach(tListGenercic, (t) =>
-            {
-                var telegram = new Telegram();
-                XmlElement temp = (XmlElement)t;
+    <input type="file" @ref=inputTypeFileElement />
+    <a></a>
+    <button @onclick=ReadFile>Read file</button>
+    @*<button @onclick=AnalyzeEmiLengths>Analyze Emi Structure</button>*@
 
-                telegram.TimestampS = temp.GetAttributeNode("Timestamp").Value;
-                var tempDate = DateTime.Parse(telegram.TimestampS);
-                telegram.Timestamp = tempDate.AddHours(2);
-
-                telegram.Service = temp.GetAttributeNode("Service").Value;
-                telegram.FrameFormat = temp.GetAttributeNode("FrameFormat").Value;
-                telegram.RawData = temp.GetAttributeNode("RawData").Value;
-                telegram.RawDataLength = temp.GetAttributeNode("RawData").Value.Length;
-
-                telegram.TID = TelegramsList.Count;
-                currentCount = telegram.TID;
-                TelegramsList.Add(telegram);
-            });
-
-            doc = "File loaded succesfully!";
-        }
-        DgTelegramsList = new List<Telegram>((from t in TelegramsList
-                                              orderby t.TID ascending
-                                              select t).Take(10));
-    }
-
-    public async Task ReadFile()
-    {
-        currentCount = 0;
-        TelegramsList.Clear();
-        DgTelegramsList.Clear();
-
-        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
-        {
-            XmlDocument xmlDoc = new XmlDocument();
-            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
-            {
-                xmlDoc.Load(memStream);
-            }
-            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
-            currentCount = tList.Count;
-            var tListGenercic = tList.Cast<XmlElement>();
-            var maxIterations = (tListGenercic.Count() > 10) ? 10 : tList.Count;
-
-            for (int i = 0; i < maxIterations; i++)
-            {
-                var t = tList[i];
-                var telegram = new Telegram();
-                XmlElement temp = (XmlElement)t;
-
-                telegram.TimestampS = temp.GetAttributeNode("Timestamp").Value;
-                var tempDate = DateTime.Parse(telegram.TimestampS);
-                telegram.Timestamp = tempDate.AddHours(2);
-
-                telegram.Service = temp.GetAttributeNode("Service").Value;
-                telegram.FrameFormat = temp.GetAttributeNode("FrameFormat").Value;
-                telegram.RawData = temp.GetAttributeNode("RawData").Value;
-                telegram.RawDataLength = temp.GetAttributeNode("RawData").Value.Length;
-
-                telegram.TID = TelegramsList.Count;
-                TelegramsList.Add(telegram);
-            }
-
-        }
-        DgTelegramsList = new List<Telegram>((from t in TelegramsList
-                                              orderby t.TID ascending
-                                              select t).Take(10));
-        doc = "File loaded succesfully!";
-        BlockButton(false);
-    }
+    <h3>@doc</h3>
+    <button disabled=@ShowButton @onclick="SendXml">Send to server</button>
 
 
+    @code {
+
+        public bool ShowButton = true;
+        private long currentCount = 0;
+        private ElementReference inputTypeFileElement;
+        private string doc = "";
+        XmlFile objectXmlFile = new XmlFile();
+
+        public ConcurrentBag<Telegram> TelegramsList = new ConcurrentBag<Telegram>();
+        public List<Telegram> DgTelegramsList = new List<Telegram>();
 
 
-    public async Task AnalyzeEmiLengths()
-    {
-        var emiLengths = "";
-        var lenghtResultsTable = new ConcurrentDictionary<int, int>();
-        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
+        public async Task ReadFile()
         {
             currentCount = 0;
-            XmlDocument xmlDoc = new XmlDocument();
-            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
-            {
-                xmlDoc.Load(memStream);
-            }
-            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
-            currentCount = tList.Count;
-            var tListGenercic = tList.Cast<XmlElement>();
-            var maxIterations = (tListGenercic.Count() > 10) ? 10 : tList.Count;
+            TelegramsList.Clear();
+            DgTelegramsList.Clear();
 
-            var tempLength = 0;
-            Parallel.ForEach(tListGenercic, (t) =>
+            foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
             {
-                XmlElement temp = (XmlElement)t;
-
-                tempLength = temp.GetAttributeNode("RawData").Value.Length;
-                if (lenghtResultsTable.ContainsKey(tempLength))
+                IFileReference fileToGameName = file;
+                IFileInfo fileName = await fileToGameName.ReadFileInfoAsync();
+                XmlDocument xmlDoc = new XmlDocument();
+                using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
                 {
-                    int tempValue = 0;
-                    lenghtResultsTable.TryGetValue(tempLength, out tempValue);
-                    lenghtResultsTable.TryUpdate(tempLength, tempValue + 1, tempValue);
+                    xmlDoc.Load(memStream);
+                }
+                XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+                currentCount = tList.Count;
+
+                objectXmlFile = ApiService.PostXml(fileName.Name.ToString(), xmlDoc, (int)currentCount);
+
+            }
+
+            doc = "File loaded succesfully!";
+            BlockButton(false);
+        }
+
+
+        private void PostEncodedTelegram(XmlFile tosend)
+        {
+            try
+            {
+                HttpClientHandler handler = new HttpClientHandler();
+                handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+
+                var httpClient = new HttpClient(handler);
+                var payload = JsonConvert.SerializeObject(tosend);
+                payload = payload.Replace("\"Fid\":null,", "");
+
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles");
+
+                requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                var responseMessage = httpClient.SendAsync(requestMessage).Result;
+
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    var resultString = responseMessage.Content.ReadAsStringAsync().Result;
                 }
                 else
                 {
-                    lenghtResultsTable.TryAdd(tempLength, 1);
+                    // Handle error result
+                    throw new Exception();
                 }
-                currentCount = currentCount++;
-            });
-            foreach (var ent in lenghtResultsTable)
+            }
+            catch (Exception e)
             {
-                doc += "\n\r" + ent.Key.ToString() + " : " + ent.Value.ToString() + ",";
+                doc = e.Message.ToString();
             }
         }
 
-        BlockButton(true);
+
+        async void BlockButton(bool state)
+        {
+            ShowButton = state;
+            StateHasChanged();
+        }
+
+
+
+        async Task SendXml()
+        {
+            var resp = await HttpClientJsonExtensions.PostAsJsonAsync(http, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles", objectXmlFile);
+
+            if (resp.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo($"/Success");
+
+            }
+        }
+
+
     }
-
-    private void IncrementCount()
-    {
-        currentCount++;
-    }
-    async void BlockButton(bool state)
-    {
-        ShowButton = state;
-        StateHasChanged();
-    }
-
-    async void SendXml()
-    {
-
-    }
-
-
-}
-
-
-}
