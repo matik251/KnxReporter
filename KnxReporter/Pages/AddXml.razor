@@ -4,8 +4,12 @@
 @using System.Xml;
 @using Models;
 @using System.Collections.Concurrent;
+@using System.Text;
+@using System.Text.RegularExpressions;
+@using Newtonsoft.Json;
 
 @inject IFileReaderService fileReaderService;
+@inject ApiService apiService
 
 
 <h1>Add .xml file with KNX Telegrams</h1>
@@ -128,6 +132,9 @@
         BlockButton(false);
     }
 
+
+
+
     public async Task AnalyzeEmiLengths()
     {
         var emiLengths = "";
@@ -186,5 +193,9 @@
     {
 
     }
+
+
+}
+
 
 }
