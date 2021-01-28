@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager;
 
 <div class="sidebar">
     <NavMenu />
@@ -6,10 +7,20 @@
 
 <div class="main">
     <div class="top-row px-4">
-        <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+        <a @onclick="About" target="_blank" class="ml-md-auto">About</a>
     </div>
 
     <div class="content px-4">
         @Body
     </div>
 </div>
+
+@code{
+
+    async Task About()
+    {
+        NavigationManager.NavigateTo($"/Success");
+
+    }
+
+}
