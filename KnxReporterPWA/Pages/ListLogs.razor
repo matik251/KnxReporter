@@ -1,25 +1,22 @@
 ﻿@page "/listlogs"
 @using System.Net.Http
 @using System.Net.Http.Headers;
+@using Models;
 @inject HttpClient Http
 
-<h3>ListLogs</h3>
-
-
-@*<h3>@currentCount</h3>
-
-<Grid Items="DgTelegramsList" class="table table-bordered" RowClass='(row, index) => row.RawDataLength > 24 ? "table-success" : ""'>
-    <GridColumn TRowData="Telegram" Expression="c => c.TID" />
-    <GridColumn TRowData="Telegram" Expression="c => c.Timestamp" Format="d" />
-    <GridColumn TRowData="Telegram" Expression="c => c.Service" />
-    <GridColumn TRowData="Telegram" Expression="c => c.FrameFormat" />
-    <GridColumn TRowData="Telegram" Title="Raw Data">@context.RawData</GridColumn>
-</Grid>*@
+<a><strong>Telegrams</strong><br /> page @pageCounter of @totalPageCounter total</a>
+<br />
+<button class="btn" @onclick=Prev disabled=@ShowButton>Previous</button>
+<button class="btn" @onclick=Next disabled=@ShowButton>Next</button>
+<button class="rightBtn btn" @onclick=All>All</button>
 
 
 @if (logItems == null)
 {
     <p><em>Loading...</em></p>
+    <div class="loadingProgressBar">
+        <img id="loading" src="/Images/loading_file.gif" width="300px" />
+    </div>
 }
 else
 {
@@ -34,11 +31,11 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var log in logItems)
+            @foreach (var log in displayLogItems)
             {
                 <tr>
-                    <td>@log.LogId</td>
-                    <td>@log.LogTimestamp</td>
+                    <td>@log.TID</td>
+                    <td>@log.Timestamp.ToString()</td>
                     <td>@log.Service</td>
                     <td>@log.FrameFormat</td>
                     <td>@log.RawData</td>
@@ -49,45 +46,80 @@ else
 }
 
 @code {
-    private RawLog[] logItems;
+    public bool ShowProgressBar = false;
+    public bool ShowButton = true;
+    private Telegram[] logItems;
+    private Telegram[] displayLogItems = new List<Telegram>().ToArray();
+    private int pageCounter = 0;
+    private int totalPageCounter = 0;
     private string exMsg = "";
 
-    private const string URL = "https://192.168.1.200:1200/api/RawLogs";
+    private const string URL = "https://192.168.1.200:1200/api/KnxTelegrams/GetKnxTelegrams";
     private string urlParameters = "";
 
     protected override async Task OnInitializedAsync()
     {
+        Load().Wait();
+    }
+
+    async Task Prev()
+    {
+        if (pageCounter > 0)
+        {
+            var temp = pageCounter - 1;
+            pageCounter = temp;
+            displayLogItems = logItems.Skip(pageCounter * 10).Take(10).ToArray();
+            StateHasChanged();
+        }
+    }
+
+    async Task All()
+    {
+        displayLogItems = logItems.ToArray();
+    }
+
+    async Task Next()
+    {
+        if (pageCounter < totalPageCounter)
+        {
+            var temp = pageCounter + 1;
+            pageCounter = temp;
+            displayLogItems = logItems.Skip(pageCounter * 10).Take(10).ToArray();
+            StateHasChanged();
+        }
+    }
+
+    async void BlockButton(bool state)
+    {
+        ShowButton = state;
+        StateHasChanged();
+    }
+}
+
+@functions{
+    private async Task Load()
+    {
+
         try
         {
-
-            var temp = await Http.GetFromJsonAsync<IEnumerable<RawLog>>(URL);
+            var temp = await Http.GetFromJsonAsync<IEnumerable<Telegram>>(URL);
             logItems = temp.ToArray();
+
+            totalPageCounter = logItems.Count() / 10;
+            displayLogItems = logItems.Take(10).ToArray();
+            if (totalPageCounter > 1)
+            {
+                BlockButton(false);
+            }
+            else
+            {
+                BlockButton(true);
+            }
         }
         catch (Exception ex)
         {
             throw;
         }
-
-    }
-
-
-    public class RawLog
-    {
-        public int LogId { get; set; }
-        public DateTime? LogTimestamp { get; set; }
-        public string Service { get; set; }
-        public string FrameFormat { get; set; }
-        public string RawData { get; set; }
-    }
-
-    public class WeatherForecast
-    {
-        public DateTime Date { get; set; }
-
-        public int TemperatureC { get; set; }
-
-        public string Summary { get; set; }
-
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        StateHasChanged();
     }
 }

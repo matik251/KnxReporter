@@ -1,0 +1,134 @@
+@page "/addxml-kopia"
+@using Tewr.Blazor.FileReader;
+@using System.IO;
+@using System.Xml;
+@using Models;
+@using System.Collections.Concurrent;
+@using System.Text;
+@using System.Text.RegularExpressions;
+@using Newtonsoft.Json;
+
+@inject IFileReaderService fileReaderService;
+@inject NavigationManager NavigationManager;
+@inject HttpClient http;
+
+
+<h1>Add .xml file with KNX Telegrams</h1>
+
+<p>Current count: @currentCount</p>
+
+@*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
+
+<meta name="viewport" style="rectangle" content="width=device-width, initial-scale=1">
+
+<form method="post" enctype="multipart/form-data">
+    <div id="divUploadFile" style="width:400px;height:400px;line-height:400px;border:1px dashed #808080;text-align:center">
+        Drop xml here
+    </div>
+    <br/>
+    <img id="loading" src="/Images/loading_file.gif"  />
+</form>
+
+<input type="file" @ref=inputTypeFileElement />
+<a></a>
+<button @onclick=ReadFile>Read file</button>
+@*<button @onclick=AnalyzeEmiLengths>Analyze Emi Structure</button>*@
+
+<h3>@doc</h3>
+<button class="btn" disabled=@ShowButton @onclick="SendXml">Send to server</button>
+
+
+@code {
+
+    public bool ShowButton = true;
+    private long currentCount = 0;
+    private ElementReference inputTypeFileElement;
+    private string doc = "";
+    XmlFile objectXmlFile = new XmlFile();
+
+    public ConcurrentBag<Telegram> TelegramsList = new ConcurrentBag<Telegram>();
+    public List<Telegram> DgTelegramsList = new List<Telegram>();
+
+
+    public async Task ReadFile()
+    {
+        currentCount = 0;
+        TelegramsList.Clear();
+        DgTelegramsList.Clear();
+
+        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
+        {
+            IFileReference fileToGameName = file;
+            IFileInfo fileName = await fileToGameName.ReadFileInfoAsync();
+            XmlDocument xmlDoc = new XmlDocument();
+            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
+            {
+                xmlDoc.Load(memStream);
+            }
+            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+            currentCount = tList.Count;
+
+            objectXmlFile = ApiService.PostXml(fileName.Name.ToString(), xmlDoc, (int)currentCount);
+
+        }
+
+        doc = "File loaded succesfully!";
+        BlockButton(false);
+    }
+
+
+    private void PostEncodedTelegram(XmlFile tosend)
+    {
+        try
+        {
+            HttpClientHandler handler = new HttpClientHandler();
+            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+
+            var httpClient = new HttpClient(handler);
+            var payload = JsonConvert.SerializeObject(tosend);
+            payload = payload.Replace("\"Fid\":null,", "");
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles");
+
+            requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var responseMessage = httpClient.SendAsync(requestMessage).Result;
+
+            if (responseMessage.IsSuccessStatusCode)
+            {
+                var resultString = responseMessage.Content.ReadAsStringAsync().Result;
+            }
+            else
+            {
+                // Handle error result
+                throw new Exception();
+            }
+        }
+        catch (Exception e)
+        {
+            doc = e.Message.ToString();
+        }
+    }
+
+
+    async void BlockButton(bool state)
+    {
+        ShowButton = state;
+        StateHasChanged();
+    }
+
+
+
+    async Task SendXml()
+    {
+        var resp = await HttpClientJsonExtensions.PostAsJsonAsync(http, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles", objectXmlFile);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/Success");
+
+        }
+    }
+
+
+}

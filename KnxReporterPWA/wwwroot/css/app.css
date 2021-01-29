@@ -48,3 +48,83 @@ a, .btn-link {
         right: 0.75rem;
         top: 0.5rem;
     }
+
+.rectangle {
+    height: 50px;
+    width: 100px;
+    background-color: #EEE;
+}
+
+.dropArea {
+    border: 2px dashed steelblue;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: lightgrey;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    min-height: 200px;
+}
+
+    .dropArea:hover {
+        background-color: lightcyan;
+        color: #333;
+    }
+
+    .dropArea input[type=file] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        text-align: end;
+        align-content:center;
+        justify-content:flex-end;
+    }
+
+.dropAreaDrug {
+    background-color: lightseagreen;
+}
+
+.center {
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+}
+
+.loadingProgressBar {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn {
+    width: 20%;
+    text-align: center;
+    background: #65c5ef;
+    color: #fff;
+    text-transform: capitalize;
+    font-weight: bold;
+}
+
+.rightBtn {
+    float: right;
+    text-align: center;
+    width: 20%;
+}
+
+.invisible {
+    visibility: collapse
+}
+.centerElements{
+    justify-content:center;
+    align-content:center;
+    align-items: center;
+}
+
+.bottomDiv {
+    float: inherit;
+    text-align: center, end;
+}

@@ -7,6 +7,8 @@
 @using System.Text;
 @using System.Text.RegularExpressions;
 @using Newtonsoft.Json;
+@using System.IO;
+@using Microsoft.AspNetCore.Hosting;
 
 @inject IFileReaderService fileReaderService;
 @inject NavigationManager NavigationManager;
@@ -15,110 +17,122 @@
 
 <h1>Add .xml file with KNX Telegrams</h1>
 
-<p>Current count: @currentCount</p>
+<div>
+    <div class="dropArea @dropClass">
+        <div class="centerElements">
+            <div class="center">
+                <img src="/Images/file_copy-black-18dp.svg" width="200" height="100" />
+            </div>
+            <br />
+            <p class="text-center">Drag and drop xml here or click to open file dialogue</p>
+        </div>
+        <InputFile id="inputDrop"
+                   OnChange="OnInputFileChange"
+                   @ondragenter="HandleDragEnter"
+                   @ondragleave="HandleDragLeave"
+                   multiple />
+    </div>
+    <div class="invisible">
+        <InputFile id="inputDefault"
+                   OnChange="OnInputFileChange"
+                   accept="xml" 
+                   />
+    </div>
+    @if (files != null && files.Count > 1)
+    {
+        <div>
+            <ul>
+                @foreach (var file in files)
+                {
+                    <li>@file.Name</li>
+                }
+            </ul>
+        </div>
+    }
+    @if (urls.Count > 0)
+    {
+        foreach (var url in urls)
+        {
+            <br />
+            <a href="@url" download>@url</a>
+        }
+    }
+</div>
 
-@*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
-
-<input type="file" @ref=inputTypeFileElement />
-<a></a>
-<button @onclick=ReadFile>Read file</button>
-@*<button @onclick=AnalyzeEmiLengths>Analyze Emi Structure</button>*@
-
-<h3>@doc</h3>
-<button disabled=@ShowButton @onclick="SendXml">Send to server</button>
 
 
 @code {
-
-    public bool ShowButton = true;
-    private long currentCount = 0;
-    private ElementReference inputTypeFileElement;
-    private string doc = "";
-    XmlFile objectXmlFile = new XmlFile();
-
-    public ConcurrentBag<Telegram> TelegramsList = new ConcurrentBag<Telegram>();
-    public List<Telegram> DgTelegramsList = new List<Telegram>();
-
-
-    public async Task ReadFile()
+    IReadOnlyList<IBrowserFile> files;
+    List<string> urls = new List<string>();
+    string dropClass = string.Empty;
+    const int maxFileSize = 10485760;
+    private void HandleDragEnter()
     {
-        currentCount = 0;
-        TelegramsList.Clear();
-        DgTelegramsList.Clear();
-
-        foreach (var file in await fileReaderService.CreateReference(inputTypeFileElement).EnumerateFilesAsync())
-        {
-            IFileReference fileToGameName = file;
-            IFileInfo fileName = await fileToGameName.ReadFileInfoAsync();
-            XmlDocument xmlDoc = new XmlDocument();
-            using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
-            {
-                xmlDoc.Load(memStream);
-            }
-            XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
-            currentCount = tList.Count;
-
-            objectXmlFile = ApiService.PostXml(fileName.Name.ToString(), xmlDoc, (int)currentCount);
-
-        }
-
-        doc = "File loaded succesfully!";
-        BlockButton(false);
+        dropClass = "dropAreaDrug";
     }
-
-
-    private void PostEncodedTelegram(XmlFile tosend)
+    private void HandleDragLeave()
     {
+        dropClass = string.Empty;
+    }
+    async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        dropClass = string.Empty;
         try
         {
-            HttpClientHandler handler = new HttpClientHandler();
-            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
-
-            var httpClient = new HttpClient(handler);
-            var payload = JsonConvert.SerializeObject(tosend);
-            payload = payload.Replace("\"Fid\":null,", "");
-
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles");
-
-            requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-            var responseMessage = httpClient.SendAsync(requestMessage).Result;
-
-            if (responseMessage.IsSuccessStatusCode)
+            if (e.FileCount > 1)
             {
-                var resultString = responseMessage.Content.ReadAsStringAsync().Result;
+                files = e.GetMultipleFiles();
+                urls.Clear();
+                urls.AddRange(await SaveFiles(files));
             }
             else
             {
-                // Handle error result
-                throw new Exception();
+                files = null;
+                var url = await SaveFile(e.File);
+                urls.Clear();
+                urls.Add(url);
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            doc = e.Message.ToString();
+            System.Diagnostics.Debug.WriteLine(ex.Message);
+            throw;
         }
     }
-
-
-    async void BlockButton(bool state)
+    private async Task<List<string>> SaveFiles(IReadOnlyList<IBrowserFile> files)
     {
-        ShowButton = state;
-        StateHasChanged();
-    }
-
-
-
-    async Task SendXml()
-    {
-        var resp = await HttpClientJsonExtensions.PostAsJsonAsync(http, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles", objectXmlFile);
-
-        if (resp.IsSuccessStatusCode)
+        var list = new List<string>();
+        var guid = Guid.NewGuid().ToString();
+        foreach (var file in files)
         {
-            NavigationManager.NavigateTo($"/Success");
-
+            var url = await SaveFile(file, guid);
+            list.Add(url);
         }
+        return list;
     }
-
-
+    private async Task<string> SaveFile(IBrowserFile file, string guid = null)
+    {
+        if (guid == null)
+        {
+            guid = Guid.NewGuid().ToString();
+        }
+        var relativePath = Path.Combine("uploads", guid);
+        var dirToSave = "C:\\KnxRepoerter";
+        var di = new DirectoryInfo(dirToSave);
+        if (!di.Exists)
+        {
+            di.Create();
+        }
+        var filePath = Path.Combine(dirToSave, file.Name);
+        using (var stream = file.OpenReadStream(maxFileSize))
+        {
+            using (var mstream = new MemoryStream())
+            {
+                await stream.CopyToAsync(mstream);
+                await File.WriteAllBytesAsync(filePath, mstream.ToArray());
+            }
+        }
+        var url = Path.Combine(relativePath, file.Name).Replace("\\", "/");
+        return url;
+    }
 }
