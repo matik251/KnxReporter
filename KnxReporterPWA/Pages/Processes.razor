@@ -1,0 +1,66 @@
+﻿@page "/processes"
+@using Models;
+@inject NavigationManager NavigationManager;
+@inject HttpClient Http
+
+<h1>Server Processes</h1>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+    <div class="loadingProgressBar">
+        <img id="loading" src="/Images/loading_file.gif" width="300px" />
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Pid</th>
+                <th>Name</th>
+                <th>Ip</th>
+                <th>Type</th>
+                <th>File</th>
+                <th>Progress %</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+            <tr>
+                <td>@forecast.Pid</td>
+                <td>@forecast.ProcessName</td>
+                <td>@forecast.ProcessIp</td>
+                <td>@forecast.ProcessType</td>
+                <td>@forecast.ProcessedFile</td>
+                <td>@GetPercentage(forecast.ActualTelegramNr,forecast.TotalTelegramNr)</td>
+                <td>@forecast.TotalTelegramNr</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private KnxProcess[] forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecasts = await Http.GetFromJsonAsync<KnxProcess[]>("https://192.168.1.200:1200/api/KnxProcesses");
+    }
+
+}
+
+@functions{
+    private string GetPercentage(int? actual, int? total)
+    {
+        if( actual.HasValue && total.HasValue && total != 0)
+        {
+            return actual / total * 100 + "%";
+        }
+        return "0%";
+    }
+
+}

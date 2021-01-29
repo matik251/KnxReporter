@@ -26,5 +26,32 @@ namespace KnxReporterPWA.Models
         public int Id { get; set; }
         public int IsBusy { get; set; }
     }
+
+
+    public class KnxProcess
+    {
+        public long Pid { get; set; }
+        public string ProcessName { get; set; }
+        public string ProcessIp { get; set; }
+        public string ProcessType { get; set; }
+        public string ProcessedFile { get; set; }
+        public int? ActualTelegramNr { get; set; }
+        public int? TotalTelegramNr { get; set; }
+    }
+
+    public class DecodedTelegram
+    {
+        public long Tid { get; set; }
+        public string TimestampS { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Service { get; set; }
+        public string FrameFormat { get; set; }
+        public string SourceAddress { get; set; }
+        public string GroupAddress { get; set; }
+        public string DeviceName { get; set; }
+        public string Data { get; set; }
+        public double? DataFloat { get; set; }
+        public string SerializedData { get; set; }
+    }
 }
 
