@@ -1,0 +1,85 @@
+﻿@page "/settings"
+@using System;
+
+@inject IJSRuntime JS;
+@inject NavigationManager NavigationManager;
+
+<h3>Settings</h3>
+<h5>IP addres of REST server:</h5>
+
+<table style="width:50%;border:1px dotted red;">
+    <tr>
+        <th><a style="align-self:center;">IP byte 1</a></th>
+        <th>.</th>
+        <th><a style="align-self:center;">IP byte 2</a></th>
+        <th>.</th>
+        <th><a style="align-self:center;">IP byte 3</a></th>
+        <th>.</th>
+        <th><a style="align-self:center;">IP byte 4</a></th>
+        <th>:</th>
+        <th><a style="align-self:center;">PORT</a></th>
+    </tr>
+    <tr>
+        <th><input style="width: 100%;" value="@ipAddr1" @oninput="(EventArgs) => {SetValue1(EventArgs.Value.ToString());}" /></th>
+        <th>.</th>
+        <th><input style="width: 100%;" value="@ipAddr2" @oninput="(EventArgs) => {SetValue2(EventArgs.Value.ToString());}" /></th>
+        <th>.</th>
+        <th><input style="width: 100%;" value="@ipAddr3" @oninput="(EventArgs) => {SetValue3(EventArgs.Value.ToString());}" /></th>
+        <th>.</th>
+        <th><input style="width: 100%;" value="@ipAddr4" @oninput="(EventArgs) => {SetValue4(EventArgs.Value.ToString());}" /></th>
+        <th>:</th>
+        <th><input style="width: 100%;" value="@ipPort" @oninput="(EventArgs) => {SetValue5(EventArgs.Value.ToString());}" /></th>
+    </tr>
+</table>
+<div style="width:20px;height:10px;"></div>
+<button class="btn" @onclick=SaveSettings>Save Settings</button>
+
+@code {
+    string ipAddr1 = "";
+    string ipAddr2 = "";
+    string ipAddr3 = "";
+    string ipAddr4 = "";
+    string ipPort = "";
+    string compoundIpAddress = "";
+
+
+    public async void SaveSettings()
+    {
+        if (ipAddr1 != "" && ipAddr2 != "" && ipAddr3 != "" && ipAddr4 != "" && ipPort != "")
+        {
+            compoundIpAddress = ipAddr1 + "." + ipAddr2 + "." + ipAddr3 + "." + ipAddr4 + ":" + ipPort;
+            var message = "Confirm ip address change to:\n" + compoundIpAddress;
+            bool confirmed = await JS.InvokeAsync<bool>("Confirm", message);
+            if (confirmed)
+            {
+                NavigationManager.NavigateTo($"/");
+            }
+        }
+        else
+        {
+            var message = "Fill ip address";
+            await JS.InvokeAsync<string>("Alert", message);
+
+        }
+    }
+    private void SetValue1(string Value)
+    {
+        ipAddr1 = Value;
+    }
+    private void SetValue2(string Value)
+    {
+        ipAddr2 = Value;
+    }
+    private void SetValue3(string Value)
+    {
+        ipAddr3 = Value;
+    }
+    private void SetValue4(string Value)
+    {
+        ipAddr4 = Value;
+    }
+    private void SetValue5(string Value)
+    {
+        ipPort = Value;
+    }
+}

@@ -109,6 +109,15 @@ a, .btn-link {
     font-weight: bold;
 }
 
+.btnNormal {
+    width: 100%;
+    text-align: center;
+    background: #65c5ef;
+    color: #fff;
+    text-transform: capitalize;
+    font-weight: bold;
+}
+
 .rightBtn {
     float: right;
     text-align: center;
@@ -128,3 +137,4 @@ a, .btn-link {
     float: inherit;
     text-align: center, end;
 }
+

@@ -4,7 +4,7 @@
 @using Models;
 @inject HttpClient Http
 
-<a><strong>Telegrams</strong><br /> page @pageCounter of @totalPageCounter total</a>
+<a><h5>Telegrams</h5><br /> page @pageCounter of @totalPageCounter total</a>
 <br />
 <button class="btn" @onclick=Prev disabled=@ShowButton>Previous</button>
 <button class="btn" @onclick=Next disabled=@ShowButton>Next</button>
