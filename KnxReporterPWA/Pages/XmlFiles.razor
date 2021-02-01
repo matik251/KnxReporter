@@ -36,7 +36,7 @@ else
                 <tr>
                     <td>@log.Fid</td>
                     <td>@log.FileName</td>
-                    <td><a class="oi oi-file"/></td>
+                    <td><button class="btn oi oi-file" @onclick="@(() => ModalShow(@log))"></button></td>
                     <td>@log.IsProcessed</td>
                     <td>@log.TelegramsCount</td>
                 </tr>
@@ -44,8 +44,37 @@ else
         </tbody>
     </table>
 }
+@if (showModal)
+{
+    <div class="modal fade show width80" id="myModal" style="display:block" aria-modal="true" role="dialog">
+        <div class="modalDialog scroll">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">@modalHeader</h4>
+                    <button type="button" class="btn oi oi-x" @onclick="@ModalCancel"/>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modalBody">
+                    <code>@modalXml</code>
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn" @onclick="@ModalCancel">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
 
 @code {
+    bool showModal = false;
+    string modalHeader = "Modal";
+    string modalXml = "";
     public bool ShowProgressBar = false;
     public bool ShowButton = true;
     private Xmlfile[] logItems;
@@ -93,6 +122,19 @@ else
     {
         ShowButton = state;
         StateHasChanged();
+    }
+
+
+    async void ModalShow(Xmlfile xmlfile) {
+        modalHeader = xmlfile.FileName;
+        modalXml = xmlfile.Xmldata;
+        showModal = true;
+    }
+    void ModalCancel() => showModal = false;
+    void ModalOk()
+    {
+        Console.WriteLine("Modal ok");
+        showModal = false;
     }
 }
 

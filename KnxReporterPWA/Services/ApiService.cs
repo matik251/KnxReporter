@@ -33,6 +33,36 @@ namespace KnxReporterPWA.Pages
 
         }
 
+
+        public static async void PostProcess(KnxProcess processs)
+        {
+            try
+            {
+                HttpClientHandler handler = new HttpClientHandler();
+                var httpClient = new HttpClient(handler);
+                var payload = JsonConvert.SerializeObject(processs);
+
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://192.168.1.200:1200/api/KnxProcess/UpdateProcess");
+
+                requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                var responseMessage = await httpClient.SendAsync(requestMessage);
+
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    var resultString = await responseMessage.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    // Handle error result
+                    //throw new Exception();
+                }
+            }catch(Exception e)
+            {
+
+            }
+        }
+
         //public static void PostXmlFile(XmlFile file)
         //{
         //    PostEncodedTelegram(file);

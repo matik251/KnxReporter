@@ -1,5 +1,6 @@
 ﻿@page "/processes"
 @using Models;
+@inject IJSRuntime JS;
 @inject NavigationManager NavigationManager;
 @inject HttpClient Http
 
@@ -24,20 +25,22 @@ else
                 <th>File</th>
                 <th>Progress %</th>
                 <th>Total</th>
+                <th>Cancel</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var forecast in forecasts)
             {
-            <tr>
-                <td>@forecast.Pid</td>
-                <td>@forecast.ProcessName</td>
-                <td>@forecast.ProcessIp</td>
-                <td>@forecast.ProcessType</td>
-                <td>@forecast.ProcessedFile</td>
-                <td>@GetPercentage(forecast.ActualTelegramNr,forecast.TotalTelegramNr)</td>
-                <td>@forecast.TotalTelegramNr</td>
-            </tr>
+                <tr>
+                    <td>@forecast.Pid</td>
+                    <td>@forecast.ProcessName</td>
+                    <td>@forecast.ProcessIp</td>
+                    <td>@forecast.ProcessType</td>
+                    <td>@forecast.ProcessedFile</td>
+                    <td>@GetPercentage(forecast.ActualTelegramNr, forecast.TotalTelegramNr)</td>
+                    <td>@forecast.TotalTelegramNr</td>
+                    <td><button class="btn oi oi-circle-x" @onclick="@(()=> StopProcess(@forecast))"></button></td>
+                </tr>
             }
         </tbody>
     </table>
@@ -56,11 +59,23 @@ else
 @functions{
     private string GetPercentage(int? actual, int? total)
     {
-        if( actual.HasValue && total.HasValue && total != 0)
+        if (actual.HasValue && total.HasValue && total != 0)
         {
             return actual / total * 100 + "%";
         }
         return "0%";
+    }
+
+    private async void StopProcess(KnxProcess knxProcess)
+    {
+        var message = "Stop process: \n" + knxProcess.Pid + " : " + knxProcess.ProcessName + "?";
+        bool confirmed = await JS.InvokeAsync<bool>("Confirm", message);
+        if (confirmed)
+        {
+            //knxProcess.stop = 1
+            ApiService.PostProcess(knxProcess);
+        }
+
     }
 
 }

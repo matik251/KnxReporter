@@ -100,8 +100,19 @@ a, .btn-link {
     margin-right: auto;
 }
 
-.btn {
+.width20 {
     width: 20%;
+}
+
+.width50 {
+    width: 50%;
+}
+
+.width80 {
+    width: 80%;
+}
+
+.btn {
     text-align: center;
     background: #65c5ef;
     color: #fff;
@@ -116,6 +127,11 @@ a, .btn-link {
     color: #fff;
     text-transform: capitalize;
     font-weight: bold;
+}
+
+.blue {
+    background: #65c5ef;
+    color: #fff;
 }
 
 .rightBtn {
@@ -138,3 +154,13 @@ a, .btn-link {
     text-align: center, end;
 }
 
+.modalDialog {
+    max-width: 1200px;
+    max-height: 80%;
+    overflow-y: scroll;
+    margin: 1.75rem auto;
+    margin-top: 1.75rem;
+    margin-right: 0;
+    margin-bottom: 1.75rem;
+    margin-left: auto;
+}
