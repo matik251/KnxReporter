@@ -133,6 +133,26 @@ a, .btn-link {
     background: #65c5ef;
     color: #fff;
 }
+.green {
+    fill: #00c853;
+    stroke: #00c853;
+    background: #00c853;
+    color: #fff;
+    fill: #00c853;
+}
+.red {
+    fill: #d50000;
+    stroke: #d50000;
+    background: #d50000;
+    color: #fff;
+    fill: #d50000;
+}
+
+.leftBtn {
+    float: left;
+    text-align: center;
+    width: 20%;
+}
 
 .rightBtn {
     float: right;

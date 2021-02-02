@@ -60,7 +60,6 @@
         {
             IFileReference fileToGameName = file;
             IFileInfo fileName = await fileToGameName.ReadFileInfoAsync();
-            XmlDocument xmlDoc = new XmlDocument();
             using (MemoryStream memStream = await file.CreateMemoryStreamAsync())
             {
                 xmlDoc.Load(memStream);

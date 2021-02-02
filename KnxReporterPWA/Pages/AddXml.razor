@@ -53,29 +53,29 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th></th>
                     <th>File name</th>
                     <th>Type</th>
                     <th>Size</th>
                     <th>State</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var log in fileSentStateList)
                 {
                     <tr>
-                        <td><a class="btn oi oi-file"></a></td>
                         <td>@files[log.Id].Name</td>
-                        <td>@log@files[log.Id].ContentType</td>
+                        <td>@log.Type</td>
                         <td>@log.Size</td>
                         @if (log.SentState)
                         {
-                            <td><a class="btn oi oi-check"></a></td>
+                            <td><a class="oi oi-check "></a></td>
                         }
                         else
                         {
-                            <td><a class="btn oi oi-x"></a></td>
+                            <td><a class="oi oi-x "></a></td>
                         }
+                        <td><a class="oi oi-file"></a></td>
                     </tr>
                 }
             </tbody>
@@ -83,8 +83,10 @@
     }
     @if (urls.Count > 0)
     {
-        <button class="rightBtn btn" @onclick=ShowLinksMethod>Show links</button>
         <button class="rightBtn btn" @onclick=ClearList>Delete all</button>
+        <div style="width:10px;height:0px;"></div>
+        <button class="rightBtn btn" @onclick=ShowLinksMethod>Show links</button>
+        <button class="leftBtn btn" @onclick=Send>Send</button>
     }
 
     @if (urls.Count > 0 && HideLinksList)
@@ -106,7 +108,7 @@
     List<XmlToSend> fileSentStateList = new List<XmlToSend>();
     List<string> urls = new List<string>();
     string dropClass = string.Empty;
-    const int maxFileSize = 10485760;
+    const int maxFileSize = 100485760;
     private void HandleDragEnter()
     {
         dropClass = "dropAreaDrug";
@@ -129,7 +131,7 @@
                 fileSentStateList.Clear();
                 foreach (var file in files)
                 {
-                    var newFile = new XmlToSend(count, file.Name, false, GetReadableSize(file.Size));
+                    var newFile = new XmlToSend(count, file.Name, false, GetReadableSize(file.Size), GetType(file.ContentType));
                     fileSentStateList.Add(newFile);
                     count = fileSentStateList.Count();
                 }
@@ -146,7 +148,7 @@
                 fileSentStateList.Clear();
                 foreach (var file in files)
                 {
-                    var newFile = new XmlToSend(count, file.Name, false, GetReadableSize(file.Size));
+                    var newFile = new XmlToSend(count, file.Name, false, GetReadableSize(file.Size), GetType(file.ContentType));
                     fileSentStateList.Add(newFile);
                     count = fileSentStateList.Count();
                 }
@@ -196,8 +198,6 @@
         return url;
     }
 
-
-
     public async void ShowLinksMethod()
     {
         var newState = !HideLinksList;
@@ -214,16 +214,91 @@
 
     public string GetReadableSize(long size)
     {
-        if(size < 1000)
+        if (size < 1000)
         {
             return size + " B";
-        }else if(size < 1000000)
+        }
+        else if (size < 1000000)
         {
-            return size/1000 + " KB";
+            return size / 1000 + " KB";
         }
         else
         {
-            return size/1000000 + " MB";
+            return size / 1000000 + " MB";
+        }
+    }
+
+    public string GetType(string typeOfFile)
+    {
+        try
+        {
+            return typeOfFile.Substring(typeOfFile.LastIndexOf('/'), typeOfFile.Length);
+        }
+        catch(Exception e)
+        {
+            return typeOfFile;
+        }
+    }
+
+    public async Task Send()
+    {
+        try
+        {
+            var count = 0;
+            foreach(var file in files)
+            {
+                XmlDocument xmlDoc = new XmlDocument();
+
+                using (var stream = file.OpenReadStream(maxFileSize))
+                {
+                    using (var mstream = new MemoryStream())
+                    {
+                        await stream.CopyToAsync(mstream);
+
+                        xmlDoc.LoadXml(System.Text.Encoding.UTF8.GetString(mstream.ToArray()));
+                    }
+                }
+                XmlFile objectXmlFile = new XmlFile();
+                XmlNodeList tList = xmlDoc.GetElementsByTagName("Telegram");
+                objectXmlFile = ApiService.PostXml(file.Name, xmlDoc, (int)tList.Count);
+                StateHasChanged();
+                await PostEncodedTelegram(objectXmlFile);
+                fileSentStateList[count].SentState = true;
+                StateHasChanged();
+            }
+        }
+        catch(Exception e)
+        {
+        }
+    }
+
+
+    private async Task PostEncodedTelegram(XmlFile tosend)
+    {
+        try
+        {
+            var payload = JsonConvert.SerializeObject(tosend);
+            payload = payload.Replace("\"Fid\":null,", "");
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://192.168.1.200:1200/api/XmlFiles/PostXmlFiles");
+
+            requestMessage.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var responseMessage = await http.SendAsync(requestMessage);
+
+            if (responseMessage.IsSuccessStatusCode)
+            {
+                var resultString = await responseMessage.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                // Handle error result
+                throw new Exception();
+            }
+        }
+        catch (Exception e)
+        {
+            throw e;
         }
     }
 

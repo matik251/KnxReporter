@@ -66,17 +66,19 @@ namespace KnxReporterPWA.Models
 
     public class XmlToSend
     {
-        public XmlToSend(int id, string name, bool state, string size)
+        public XmlToSend(int id, string name, bool state, string size, string type)
         {
             this.Id = id;
             this.Filename = name;
             this.SentState = state;
             this.Size = size;
+            this.Type = type;
         }
         public int Id { get; set; }
         public string Filename { get; set; }
         public bool SentState { get; set; }
         public string Size { get; set; }
+        public string Type { get; set; }
     }
 }
 
