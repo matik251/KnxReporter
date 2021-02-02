@@ -63,5 +63,20 @@ namespace KnxReporterPWA.Models
         public double? DataFloat { get; set; }
         public string SerializedData { get; set; }
     }
+
+    public class XmlToSend
+    {
+        public XmlToSend(int id, string name, bool state, string size)
+        {
+            this.Id = id;
+            this.Filename = name;
+            this.SentState = state;
+            this.Size = size;
+        }
+        public int Id { get; set; }
+        public string Filename { get; set; }
+        public bool SentState { get; set; }
+        public string Size { get; set; }
+    }
 }
 
