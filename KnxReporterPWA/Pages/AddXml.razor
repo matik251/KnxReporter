@@ -10,6 +10,7 @@
 @using System.IO;
 @using Microsoft.AspNetCore.Hosting;
 
+@inject IJSRuntime JS;
 @inject IFileReaderService fileReaderService;
 @inject NavigationManager NavigationManager;
 @inject HttpClient http;
@@ -234,7 +235,7 @@
         {
             return typeOfFile.Substring(typeOfFile.LastIndexOf('/'), typeOfFile.Length);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             return typeOfFile;
         }
@@ -245,7 +246,7 @@
         try
         {
             var count = 0;
-            foreach(var file in files)
+            foreach (var file in files)
             {
                 XmlDocument xmlDoc = new XmlDocument();
 
@@ -265,10 +266,13 @@
                 await PostEncodedTelegram(objectXmlFile);
                 fileSentStateList[count].SentState = true;
                 StateHasChanged();
+                count = count + 1;
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
+            var message = e.Message;
+            await JS.InvokeAsync<string>("Alert", message);
         }
     }
 
