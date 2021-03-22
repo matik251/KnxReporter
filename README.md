@@ -7,6 +7,7 @@
 Project is created with:
 * .NET 5
 * Bl@zor Webassembly
+* JavaScript 
 
 And requires:
 * [REST Server]("https://github.com/matik251/KnxDataCollector" "KnxDataCollectore's repository")
@@ -39,9 +40,9 @@ Website supports uploading and processing multiple xml files with scheme given b
 
 ## Table of contents
 - [KnxManager](#knxmanager)
-  - [Table of contents](#table-of-contents)
   - [Technologies](#technologies)
   - [Features](#features)
   - [KNX Data XML file scheme](#knx-data-xml-file-scheme)
   - [Installation](#installation)
+  - [Table of contents](#table-of-contents)
 	
