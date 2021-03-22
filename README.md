@@ -14,7 +14,11 @@
 Project is created with:
 * .NET 5
 * Bl@zor Webassembly
-	
+
+And requires:
+* [REST Server]("https://github.com/matik251/KnxDataCollector" "KnxDataCollectore's repository")
+* Database
+
 ## Features
 Website allows user to manage all features of Data Extraction System from Intelligent Building with KNX. 
 
@@ -25,7 +29,7 @@ Website supports uploading and processing multiple xml files with scheme given b
 <!-- timezone offset +01:00 hour -->
   <Telegram Timestamp="YYYY-MM-DDTHH:mm:ss.xxxx" Service="service" FrameFormat="CommonEmi" RawData="HexadecimalData" />
   ...
-  </CommunicationLog>
+</CommunicationLog>
 ```
 
 ## Installation
