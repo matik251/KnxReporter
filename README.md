@@ -2,14 +2,7 @@
 
 # KnxManager
  KnxReporter is a web PWA client for system management of Data Extraction System from Intelligent Building with KNX.
-## Table of contents
-- [KnxManager](#knxmanager)
-  - [Table of contents](#table-of-contents)
-  - [Technologies](#technologies)
-  - [Features](#features)
-  - [KNX Data XML file scheme](#knx-data-xml-file-scheme)
-  - [Installation](#installation)
-	
+ 
 ## Technologies
 Project is created with:
 * .NET 5
@@ -22,6 +15,11 @@ And requires:
 ## Features
 Website allows user to manage all features of Data Extraction System from Intelligent Building with KNX. 
 
+ <p float="left">
+ <img src="https://github.com/matik251/KnxReporter/blob/master/KnxReporterPWA/Pages/KnxHome.png?raw=true" width=48% >
+ <img src="https://github.com/matik251/KnxReporter/blob/master/KnxReporterPWA/Pages/DragnDrop.png?raw=true" width=48%>
+ </p>
+
 ## KNX Data XML file scheme
 Website supports uploading and processing multiple xml files with scheme given below: 
 ```
@@ -33,3 +31,17 @@ Website supports uploading and processing multiple xml files with scheme given b
 ```
 
 ## Installation
+<p align="center">
+ <img src="https://github.com/matik251/KnxReporter/blob/master/KnxReporterPWA/Pages/InstallPWA.png" width=60% >
+ 
+ </p>
+
+
+## Table of contents
+- [KnxManager](#knxmanager)
+  - [Table of contents](#table-of-contents)
+  - [Technologies](#technologies)
+  - [Features](#features)
+  - [KNX Data XML file scheme](#knx-data-xml-file-scheme)
+  - [Installation](#installation)
+	
